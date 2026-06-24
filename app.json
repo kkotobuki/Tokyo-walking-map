@@ -1,0 +1,22 @@
+{
+  "expo": {
+    "name": "Walking app",
+    "slug": "walking-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "walkingapp",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.walkingapp.dev"
+    },
+    "android": {
+      "package": "com.walkingapp.dev"
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "single"
+    }
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "name": "walking-app",
+  "private": true,
+  "main": "index.ts",
+  "scripts": {
+    "start": "expo start",
+    "ios": "expo start --ios",
+    "android": "expo start --android",
+    "import": "tsx scripts/import-stations.ts",
+    "audit": "tsx scripts/audit-stations.ts",
+    "stats": "tsx scripts/stats.ts",
+    "migrate:archetypes": "tsx scripts/migrate-archetypes.ts",
+    "geocode": "tsx scripts/geocode-stations.ts"
+  },
+  "dependencies": {
+    "@notionhq/client": "^2.2.15",
+    "@types/leaflet": "^1.9.21",
+    "@types/react": "~19.1.10",
+    "expo": "^54.0.35",
+    "expo-status-bar": "~3.0.9",
+    "leaflet": "^1.9.4",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "react-leaflet": "^5.0.0",
+    "react-native": "0.81.5",
+    "react-native-web": "^0.21.0",
+    "typescript": "~5.9.2"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.2"
+  }
+}
