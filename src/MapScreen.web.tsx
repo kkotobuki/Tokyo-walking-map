@@ -10,9 +10,8 @@ import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { MapContainer, TileLayer, Marker, Polyline, CircleMarker, Tooltip } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { STATION_COORDS } from "../data/stationCoords";
+import { lookupCoord, type LatLng } from "./coords";
 
-type LatLng = [number, number];
 const TOKYO: LatLng = [35.681236, 139.767125]; // 東京駅（座標不明時の既定中心）
 
 // --- 距離計算（ハバサイン, メートル） ---
@@ -88,16 +87,19 @@ function fmtDur(ms: number) {
 export default function MapScreen({
   stationName,
   onBack,
+  embedded = false,
 }: {
   stationName: string;
-  onBack: () => void;
+  onBack?: () => void;
+  embedded?: boolean;
 }) {
-  const stationCoord = STATION_COORDS[stationName] ?? null;
+  const stationCoord = lookupCoord(stationName);
   const mapRef = useRef<L.Map | null>(null);
 
   const [pos, setPos] = useState<LatLng | null>(null);
   const [accuracy, setAccuracy] = useState<number | null>(null);
   const [geoErr, setGeoErr] = useState<string>("");
+  const [layer, setLayer] = useState<"voyager" | "sat">("voyager"); // 地図 / 航空写真
 
   const [recording, setRecording] = useState(false);
   const recordingRef = useRef(false);
@@ -174,27 +176,31 @@ export default function MapScreen({
   const liveDist = pathLength(path);
   const center = stationCoord ?? pos ?? TOKYO;
 
+  const statusText = recording
+    ? `記録中 ${fmtDist(liveDist)} / ${fmtDur((now || Date.now()) - (startedAt ?? Date.now()))}`
+    : stationCoord
+      ? "現在地と軌跡を記録できます"
+      : "この駅は座標未取得";
+
   return (
-    <View style={styles.flex}>
-      {/* 上部バー */}
-      <View style={styles.topbar}>
-        <Pressable onPress={onBack} hitSlop={10}>
-          <Text style={styles.link}>← 戻る</Text>
-        </Pressable>
-        <Text style={styles.title} numberOfLines={1}>
-          {stationName}
-        </Text>
-        <Text style={styles.status}>
-          {recording
-            ? `記録中 ${fmtDist(liveDist)} / ${fmtDur((now || Date.now()) - (startedAt ?? Date.now()))}`
-            : stationCoord
-              ? "現在地と軌跡を記録できます"
-              : "この駅は座標未取得"}
-        </Text>
-      </View>
+    <View style={embedded ? styles.embed : styles.flex}>
+      {/* 上部バー（全画面時のみ） */}
+      {!embedded && (
+        <View style={styles.topbar}>
+          {onBack && (
+            <Pressable onPress={onBack} hitSlop={10}>
+              <Text style={styles.link}>← 戻る</Text>
+            </Pressable>
+          )}
+          <Text style={styles.title} numberOfLines={1}>
+            {stationName}
+          </Text>
+          <Text style={styles.status}>{statusText}</Text>
+        </View>
+      )}
 
       {/* 地図 */}
-      <View style={styles.mapWrap}>
+      <View style={embedded ? styles.mapWrapEmbed : styles.mapWrap}>
         <MapContainer
           center={center}
           zoom={15}
@@ -203,10 +209,32 @@ export default function MapScreen({
             mapRef.current = m;
           }}
         >
-          <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          />
+          {layer === "sat" ? (
+            <>
+              {/* 航空写真（Esri World Imagery）＋ 地名・道路ラベル（CARTO） */}
+              <TileLayer
+                key="sat"
+                attribution="Tiles &copy; Esri, Maxar, Earthstar Geographics"
+                url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+                maxZoom={19}
+              />
+              <TileLayer
+                key="sat-labels"
+                url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}.png"
+                subdomains="abcd"
+                maxZoom={20}
+              />
+            </>
+          ) : (
+            /* Google Map に近い明るい道路地図（CARTO Voyager） */
+            <TileLayer
+              key="voyager"
+              attribution='&copy; <a href="https://carto.com/">CARTO</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+              url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png"
+              subdomains="abcd"
+              maxZoom={20}
+            />
+          )}
 
           {/* 駅の大きいピン */}
           {stationCoord && (
@@ -246,11 +274,18 @@ export default function MapScreen({
       </View>
 
       {/* 下部コントロール */}
-      <View style={styles.controls}>
+      <View style={embedded ? styles.controlsEmbed : styles.controls}>
+        {embedded && <Text style={styles.statusEmbed}>{statusText}</Text>}
         {!!geoErr && <Text style={styles.err}>{geoErr}</Text>}
         <View style={styles.btnRow}>
           <Pressable style={[styles.smallBtn]} onPress={() => recenter(pos)}>
             <Text style={styles.smallBtnText}>📍 現在地へ</Text>
+          </Pressable>
+          <Pressable
+            style={[styles.smallBtn]}
+            onPress={() => setLayer((l) => (l === "voyager" ? "sat" : "voyager"))}
+          >
+            <Text style={styles.smallBtnText}>{layer === "voyager" ? "🛰 航空写真" : "🗺 地図"}</Text>
           </Pressable>
           {stationCoord && (
             <Pressable style={[styles.smallBtn]} onPress={() => recenter(stationCoord)}>
@@ -279,12 +314,23 @@ export default function MapScreen({
 
 const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: "#fff" },
+  embed: {
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+    overflow: "hidden",
+    marginBottom: 16,
+  },
   topbar: { paddingTop: 44, paddingHorizontal: 16, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: "#eee", gap: 2 },
   link: { color: "#1f6feb", fontSize: 15, fontWeight: "600" },
   title: { fontSize: 20, fontWeight: "800", marginTop: 4 },
   status: { color: "#888", fontSize: 12 },
+  statusEmbed: { color: "#888", fontSize: 12, marginBottom: 2 },
   mapWrap: { flex: 1, minHeight: 320 },
+  mapWrapEmbed: { height: 260 },
   controls: { padding: 14, paddingBottom: 24, borderTopWidth: 1, borderTopColor: "#eee", gap: 10 },
+  controlsEmbed: { padding: 12, gap: 10 },
   btnRow: { flexDirection: "row", gap: 8 },
   smallBtn: { backgroundColor: "#eef2f7", borderRadius: 999, paddingVertical: 8, paddingHorizontal: 14 },
   smallBtnText: { fontSize: 13, color: "#374151", fontWeight: "700" },

@@ -17,6 +17,7 @@ import {
 import { StatusBar } from "expo-status-bar";
 import { fetchAllStations, type StationSummary } from "./notion";
 import { categoryStyle } from "./ui";
+import StationsMap from "./StationsMap";
 
 const VISITED = "訪問済み";
 const CATEGORY_ORDER = ["食市場", "金融商業", "IT", "観光文化", "物流", "住宅", "下町", "官公庁"];
@@ -27,6 +28,7 @@ export default function HomeScreen({ onPick }: { onPick: (name: string) => void 
   const [errMsg, setErrMsg] = useState("");
   const [query, setQuery] = useState("");
   const [active, setActive] = useState<Set<string>>(new Set());
+  const [showMap, setShowMap] = useState(false);
 
   // くじ演出（タップで減速して止まるスロット）
   const [drawing, setDrawing] = useState(false);
@@ -200,19 +202,33 @@ export default function HomeScreen({ onPick }: { onPick: (name: string) => void 
         {stations.length}駅中 {visitedCount}駅 踏破
       </Text>
 
-      <Pressable
-        style={({ pressed }) => [styles.lotteryBtn, pressed && styles.lotteryBtnPressed]}
-        onPress={drawLottery}
-      >
-        <View style={styles.lotteryIcon}>
-          <Text style={styles.lotteryDice}>🎲</Text>
-        </View>
-        <View style={styles.lotteryTextWrap}>
-          <Text style={styles.lotteryText}>くじをひく</Text>
-          <Text style={styles.lotterySub}>未訪問 {unvisitedCount}駅から おまかせ</Text>
-        </View>
-        <Text style={styles.lotteryArrow}>›</Text>
-      </Pressable>
+      <View style={styles.ctaRow}>
+        <Pressable
+          style={({ pressed }) => [styles.cta, styles.ctaLottery, pressed && styles.ctaPressed]}
+          onPress={drawLottery}
+        >
+          <View style={[styles.ctaIcon, styles.ctaIconLottery]}>
+            <Text style={styles.ctaEmoji}>🎲</Text>
+          </View>
+          <View>
+            <Text style={[styles.ctaTitle, styles.ctaTitleOnDark]}>くじをひく</Text>
+            <Text style={[styles.ctaSub, styles.ctaSubOnDark]}>未訪問 {unvisitedCount}駅から</Text>
+          </View>
+        </Pressable>
+
+        <Pressable
+          style={({ pressed }) => [styles.cta, styles.ctaMap, pressed && styles.ctaPressed]}
+          onPress={() => setShowMap(true)}
+        >
+          <View style={[styles.ctaIcon, styles.ctaIconMap]}>
+            <Text style={styles.ctaEmoji}>🗺</Text>
+          </View>
+          <View>
+            <Text style={styles.ctaTitle}>地図から選ぶ</Text>
+            <Text style={styles.ctaSub}>ピンで街を決める</Text>
+          </View>
+        </Pressable>
+      </View>
 
       <Text style={styles.sectionLabel}>自分で選ぶ</Text>
       <TextInput
@@ -268,6 +284,17 @@ export default function HomeScreen({ onPick }: { onPick: (name: string) => void 
         }}
         ListEmptyComponent={<Text style={styles.muted}>条件に合う駅がありません</Text>}
       />
+
+      <Modal visible={showMap} animationType="slide" onRequestClose={() => setShowMap(false)}>
+        <StationsMap
+          stations={stations.map((s) => ({ name: s.name, status: s.status }))}
+          onPick={(name) => {
+            setShowMap(false);
+            onPick(name);
+          }}
+          onClose={() => setShowMap(false)}
+        />
+      </Modal>
 
       <Modal visible={drawing} transparent animationType="fade">
         <Pressable style={styles.overlay} onPress={stopSpin}>
@@ -327,13 +354,11 @@ const styles = StyleSheet.create({
   center: { flex: 1, alignItems: "center", justifyContent: "center", padding: 24, gap: 12 },
   appTitle: { fontSize: 26, fontWeight: "800" },
   sub: { color: "#888", fontSize: 13, marginTop: 4 },
-  lotteryBtn: {
-    flexDirection: "row",
-    alignItems: "center",
+  ctaRow: { flexDirection: "row", gap: 12, marginTop: 18 },
+  cta: { flex: 1, borderRadius: 20, padding: 16, minHeight: 140, justifyContent: "space-between" },
+  ctaPressed: { transform: [{ scale: 0.98 }] },
+  ctaLottery: {
     backgroundColor: "#5b21b6",
-    borderRadius: 20,
-    padding: 16,
-    marginTop: 18,
     borderWidth: 1,
     borderColor: "#7c3aed",
     shadowColor: "#7c3aed",
@@ -342,21 +367,24 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 10 },
     elevation: 10,
   },
-  lotteryBtnPressed: { transform: [{ scale: 0.985 }], shadowOpacity: 0.3 },
-  lotteryIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: "rgba(255,255,255,0.16)",
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 14,
+  ctaMap: {
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+    shadowColor: "#1e3a8a",
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 3,
   },
-  lotteryDice: { fontSize: 30 },
-  lotteryTextWrap: { flex: 1 },
-  lotteryText: { color: "#fff", fontSize: 20, fontWeight: "800", letterSpacing: 1 },
-  lotterySub: { color: "#ddd6fe", fontSize: 12, marginTop: 4 },
-  lotteryArrow: { color: "#c4b5fd", fontSize: 28, fontWeight: "300", marginLeft: 6 },
+  ctaIcon: { width: 48, height: 48, borderRadius: 24, alignItems: "center", justifyContent: "center" },
+  ctaIconLottery: { backgroundColor: "rgba(255,255,255,0.16)" },
+  ctaIconMap: { backgroundColor: "#2563eb" },
+  ctaEmoji: { fontSize: 26 },
+  ctaTitle: { fontSize: 18, fontWeight: "800", color: "#111", marginTop: 12 },
+  ctaTitleOnDark: { color: "#fff" },
+  ctaSub: { fontSize: 12, color: "#6b7280", marginTop: 3 },
+  ctaSubOnDark: { color: "#ddd6fe" },
   tapBadge: {
     borderWidth: 1.5,
     borderColor: "rgba(255,255,255,0.7)",
