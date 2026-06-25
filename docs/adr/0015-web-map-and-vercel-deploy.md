@@ -23,7 +23,7 @@
 ## 決定
 
 - **Web版を Vercel にデプロイ**する。`expo export -p web`（`web.output: "single"` のSPA）を `dist/` に出し、Vercel が配信する。言語・既存コードはそのまま流用する。
-- **地図は Leaflet（react-leaflet）＋ OpenStreetMap タイル**。APIキー不要・無料枠で個人利用に収まる。`react-native-maps` は Web 非対応のため Web では使わない。
+- **地図は Leaflet（react-leaflet）**。タイルは Google Map に近い見た目の **CARTO Voyager** を既定とし、**航空写真（Esri World Imagery ＋ CARTO ラベル）に切り替えるトグル**を持つ。いずれも APIキー不要・無料枠で個人利用に収まる（要 attribution）。`react-native-maps` は Web 非対応のため Web では使わない。
 - **地図画面は `MapScreen.web.tsx`**（Leaflet 実装）と **`MapScreen.tsx`**（ネイティブ用スタブ）に分け、Metro のプラットフォーム解決に任せる。将来ネイティブ化しても壊れない。
 - **歩行軌跡は前面GPSで記録**: `navigator.geolocation.watchPosition` で点列を集め Polyline で描画。5m未満の移動はジッタとして無視。軌跡は **localStorage に保存**（駅名でひもづけ、過去の散歩を薄い線で重ね描き）。ADR-0007/0009 の「記録・local-first」の延長。
 - **駅座標は同梱表で持つ**: Notion スキーマは触らず、`data/stationCoords.ts`（駅名→緯度経度）をアプリに同梱して名前で突き合わせる。表は `scripts/geocode-stations.ts`（OSM Nominatim・無料）で一括生成する。

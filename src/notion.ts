@@ -2,17 +2,21 @@
 // 読み: 駅を1件取得。書き: 仮説 / 感想 / ステータス / 訪問日 を更新（ADR-0012/0013）。
 // ネイティブなので CORS の制約はない。Notion-Version ヘッダは必須。
 
-import { NOTION_TOKEN, DATABASE_ID } from "./config";
+import { NOTION_TOKEN, DATABASE_ID, NOTION_PROXY } from "./config";
 
-const API = "https://api.notion.com/v1";
+// web は CORS で Notion を直叩きできない。EXPO_PUBLIC_NOTION_PROXY 設定時はそこを経由する（ADR-0015）。
+const BASE = NOTION_PROXY ? NOTION_PROXY.replace(/\/+$/, "") : "https://api.notion.com";
+const API = `${BASE}/v1`;
 const NOTION_VERSION = "2022-06-28";
 
 function headers() {
-  return {
-    Authorization: `Bearer ${NOTION_TOKEN}`,
+  const h: Record<string, string> = {
     "Notion-Version": NOTION_VERSION,
     "Content-Type": "application/json",
   };
+  // proxy 経由時はトークンを proxy が付与する（web クライアントにトークンを置かない）。
+  if (!NOTION_PROXY) h.Authorization = `Bearer ${NOTION_TOKEN}`;
+  return h;
 }
 
 // --- プロパティ読み出しヘルパ ---

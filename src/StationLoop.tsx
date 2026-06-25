@@ -5,7 +5,6 @@ import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
-  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -35,7 +34,6 @@ export default function StationLoop({
   const [hypothesis, setHypothesis] = useState("");
   const [reflection, setReflection] = useState("");
   const [saving, setSaving] = useState(false);
-  const [showMap, setShowMap] = useState(false);
 
   useEffect(() => {
     void load();
@@ -139,9 +137,7 @@ export default function StationLoop({
         </Text>
         <Text style={styles.title}>{station.name}</Text>
 
-        <Pressable style={styles.mapBtn} onPress={() => setShowMap(true)}>
-          <Text style={styles.mapBtnText}>🗺 地図で見る・散歩を記録する</Text>
-        </Pressable>
+        <MapScreen stationName={station.name} embedded />
 
         {(phase === "outbound" || phase === "onsite") && (
           <>
@@ -251,10 +247,6 @@ export default function StationLoop({
 
         <StatusBar style="auto" />
       </ScrollView>
-
-      <Modal visible={showMap} animationType="slide" onRequestClose={() => setShowMap(false)}>
-        <MapScreen stationName={station.name} onBack={() => setShowMap(false)} />
-      </Modal>
     </KeyboardAvoidingView>
   );
 }
@@ -297,16 +289,6 @@ const styles = StyleSheet.create({
   },
   btnDisabled: { backgroundColor: "#aebfd6" },
   btnText: { color: "#fff", fontSize: 16, fontWeight: "600" },
-  mapBtn: {
-    backgroundColor: "#ecfdf5",
-    borderWidth: 1,
-    borderColor: "#6ee7b7",
-    borderRadius: 12,
-    paddingVertical: 12,
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  mapBtnText: { color: "#047857", fontSize: 15, fontWeight: "700" },
   linkBtn: { marginTop: 18, alignItems: "center" },
   linkText: { color: "#1f6feb", fontSize: 15, fontWeight: "600" },
   callout: {

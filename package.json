@@ -10,7 +10,9 @@
     "audit": "tsx scripts/audit-stations.ts",
     "stats": "tsx scripts/stats.ts",
     "migrate:archetypes": "tsx scripts/migrate-archetypes.ts",
-    "geocode": "tsx scripts/geocode-stations.ts"
+    "geocode": "tsx scripts/geocode-stations.ts",
+    "proxy": "tsx scripts/notion-proxy.ts",
+    "strip:quiz": "tsx scripts/strip-quiz-tail.ts"
   },
   "dependencies": {
     "@notionhq/client": "^2.2.15",

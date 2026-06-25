@@ -9,7 +9,8 @@ export default function MapScreen({
   onBack,
 }: {
   stationName: string;
-  onBack: () => void;
+  onBack?: () => void;
+  embedded?: boolean;
 }) {
   return (
     <View style={styles.center}>
@@ -17,9 +18,11 @@ export default function MapScreen({
       <Text style={styles.muted}>
         {stationName} の地図・現在地・歩行記録はブラウザ版で開いてください。
       </Text>
-      <Pressable style={styles.btn} onPress={onBack}>
-        <Text style={styles.btnText}>← 戻る</Text>
-      </Pressable>
+      {onBack && (
+        <Pressable style={styles.btn} onPress={onBack}>
+          <Text style={styles.btnText}>← 戻る</Text>
+        </Pressable>
+      )}
     </View>
   );
 }
