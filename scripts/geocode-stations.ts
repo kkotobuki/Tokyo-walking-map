@@ -11,10 +11,8 @@ import { Client } from "@notionhq/client";
 import { STATION_COORDS, lookupCoord, type LatLng } from "../src/coords";
 
 const TOKEN = process.env.EXPO_PUBLIC_NOTION_TOKEN ?? process.env.NOTION_TOKEN ?? "";
-const DB =
-  process.env.EXPO_PUBLIC_NOTION_DB_ID ??
-  process.env.NOTION_DB_ID ??
-  "44fd390cb06349b3b788b29e7dd181bb";
+// データベースIDはリポジトリに載せない（src/config.ts と同方針）。env から必須で読む。
+const DB = process.env.EXPO_PUBLIC_NOTION_DB_ID ?? process.env.NOTION_DB_ID ?? "";
 const OUT = join(__dirname, "..", "data", "stationCoords.ts");
 const UA = "walking-app/1.0 (personal hobby project)";
 
@@ -49,7 +47,11 @@ async function geocode(name: string): Promise<LatLng | null> {
 
 async function main() {
   if (!TOKEN) {
-    console.error("トークンが env にありません（EXPO_PUBLIC_NOTION_TOKEN / NOTION_TOKEN）。.env を確認してください。");
+    console.error("トークンが env にありません（EXPO_PUBLIC_NOTION_TOKEN / NOTION_TOKEN）。環境ファイルを確認してください。");
+    process.exit(1);
+  }
+  if (!DB) {
+    console.error("データベースIDが env にありません（EXPO_PUBLIC_NOTION_DB_ID / NOTION_DB_ID）。環境ファイルを確認してください。");
     process.exit(1);
   }
 
