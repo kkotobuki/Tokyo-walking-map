@@ -15,11 +15,10 @@ import {
   View,
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
-import { fetchAllStations, type StationSummary } from "./notion";
+import { fetchAllStations, STATUS_VISITED, type StationSummary } from "./notion";
 import { categoryStyle } from "./ui";
 import StationsMap from "./StationsMap";
 
-const VISITED = "訪問済み";
 const CATEGORY_ORDER = ["食市場", "金融商業", "IT", "観光文化", "物流", "住宅", "下町", "官公庁"];
 
 export default function HomeScreen({ onPick }: { onPick: (name: string) => void }) {
@@ -143,7 +142,7 @@ export default function HomeScreen({ onPick }: { onPick: (name: string) => void 
   }
 
   function drawLottery() {
-    const pool = stations.filter((s) => s.status !== VISITED);
+    const pool = stations.filter((s) => s.status !== STATUS_VISITED);
     if (pool.length === 0) {
       Alert.alert("全駅制覇！", "行ったことのない駅はもうありません。");
       return;
@@ -192,7 +191,7 @@ export default function HomeScreen({ onPick }: { onPick: (name: string) => void 
     );
   }
 
-  const visitedCount = stations.filter((s) => s.status === VISITED).length;
+  const visitedCount = stations.filter((s) => s.status === STATUS_VISITED).length;
   const unvisitedCount = stations.length - visitedCount;
 
   const header = (
@@ -267,7 +266,7 @@ export default function HomeScreen({ onPick }: { onPick: (name: string) => void 
           );
         }}
         renderItem={({ item }) => {
-          const visited = item.status === VISITED;
+          const visited = item.status === STATUS_VISITED;
           return (
             <Pressable style={styles.row} onPress={() => onPick(item.name)}>
               <View style={styles.rowMain}>
@@ -443,7 +442,6 @@ const styles = StyleSheet.create({
   },
   overlayDice: { fontSize: 56 },
   overlayName: { color: "#fff", fontSize: 40, fontWeight: "800", textAlign: "center", paddingHorizontal: 24 },
-  overlayHint: { color: "#aaa", fontSize: 14 },
   h1: { fontSize: 20, fontWeight: "700" },
   muted: { color: "#888", fontSize: 13, marginTop: 12, textAlign: "center" },
   error: { color: "#c00", fontSize: 13, textAlign: "center" },

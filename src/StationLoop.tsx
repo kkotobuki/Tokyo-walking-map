@@ -142,7 +142,7 @@ export default function StationLoop({
         {(phase === "outbound" || phase === "onsite") && (
           <>
             <CategoryChip category={station.category} />
-            <Chips items={station.demands} variant="demand" />
+            <Chips items={station.demands} />
           </>
         )}
 
@@ -194,7 +194,7 @@ export default function StationLoop({
           <View>
             <View style={styles.callout}>
               <Text style={styles.calloutTitle}>💡 この街の正体</Text>
-              <Chips items={station.gapTypes} variant="gap" />
+              <Chips items={station.gapTypes} />
               <Text style={styles.calloutBody}>{station.gap}</Text>
             </View>
 
@@ -202,16 +202,16 @@ export default function StationLoop({
             <Text style={styles.bodyQuote}>{hypothesis || "（未記入）"}</Text>
 
             <Text style={styles.label}>解説</Text>
-            <TagBlock label="街の形（類型）" items={station.archetypes} variant="archetype" />
+            <TagBlock label="街の形（類型）" items={station.archetypes} />
             <Text style={styles.body}>{station.answer}</Text>
 
             <Text style={styles.label}>供給の筋</Text>
-            <TagBlock label="街の核（アンカー）" items={station.anchors} variant="anchor" />
-            <TagBlock label="変えた出来事（ショック）" items={station.shocks} variant="shock" />
+            <TagBlock label="街の核（アンカー）" items={station.anchors} />
+            <TagBlock label="変えた出来事（ショック）" items={station.shocks} />
             <Text style={styles.body}>{station.supply}</Text>
 
             <Text style={styles.label}>需要の筋</Text>
-            <TagBlock label="需要" items={station.demands} variant="demand" />
+            <TagBlock label="需要" items={station.demands} />
             <Text style={styles.body}>{station.demand}</Text>
 
             <Text style={styles.label}>未来の観点</Text>

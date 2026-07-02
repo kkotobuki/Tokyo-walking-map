@@ -11,6 +11,3 @@ export const NOTION_PROXY = process.env.EXPO_PUBLIC_NOTION_PROXY ?? "";
 // 既存DB「東京100駅経済観察マップ」の database id。
 // リポジトリに識別子を載せないため、値は EXPO_PUBLIC_NOTION_DB_ID（.env, gitignore 済み）から読む。
 export const DATABASE_ID = process.env.EXPO_PUBLIC_NOTION_DB_ID ?? "";
-
-// Step 1（縦に薄く1駅）のパイロット駅。
-export const PILOT_STATION = "お台場海浜公園";
