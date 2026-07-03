@@ -7,9 +7,8 @@ import { MapContainer, TileLayer, Marker } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { lookupCoord, type LatLng } from "./coords";
-
-const TOKYO: LatLng = [35.681236, 139.767125];
-const VISITED = "訪問済み";
+import { TOKYO, VOYAGER_TILE } from "./mapConfig";
+import { STATUS_VISITED } from "./notion";
 
 export type PickStation = { name: string; status: string | null };
 
@@ -48,7 +47,7 @@ export default function StationsMap({
         .filter((s): s is PickStation & { coord: LatLng } => s.coord != null),
     [stations],
   );
-  const visitedCount = pins.filter((p) => p.status === VISITED).length;
+  const visitedCount = pins.filter((p) => p.status === STATUS_VISITED).length;
 
   return (
     <View style={styles.flex}>
@@ -64,17 +63,12 @@ export default function StationsMap({
 
       <View style={styles.mapWrap}>
         <MapContainer center={TOKYO} zoom={11} style={{ height: "100%", width: "100%" }}>
-          <TileLayer
-            attribution='&copy; <a href="https://carto.com/">CARTO</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-            url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png"
-            subdomains="abcd"
-            maxZoom={20}
-          />
+          <TileLayer {...VOYAGER_TILE} />
           {pins.map((s) => (
             <Marker
               key={s.name}
               position={s.coord}
-              icon={pinIcon(s.name, s.status === VISITED)}
+              icon={pinIcon(s.name, s.status === STATUS_VISITED)}
               eventHandlers={{ click: () => onPick(s.name) }}
             />
           ))}

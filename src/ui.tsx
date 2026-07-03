@@ -3,9 +3,7 @@
 import { StyleSheet, Text, View } from "react-native";
 
 // その他タグ（アンカー/ショック/需要/類型/ズレ類型）は色分けせず中立。
-// variant は呼び出し側の互換のため受け取るが、配色には使わない。
-export function Chips({ items, variant }: { items: string[]; variant?: string }) {
-  void variant;
+export function Chips({ items }: { items: string[] }) {
   const list = items.filter(Boolean);
   if (list.length === 0) return null;
   return (
@@ -19,20 +17,12 @@ export function Chips({ items, variant }: { items: string[]; variant?: string })
   );
 }
 
-export function TagBlock({
-  label,
-  items,
-  variant,
-}: {
-  label: string;
-  items: string[];
-  variant?: string;
-}) {
+export function TagBlock({ label, items }: { label: string; items: string[] }) {
   if (items.filter(Boolean).length === 0) return null;
   return (
     <View style={{ marginTop: 12 }}>
       <Text style={s.tagLabel}>{label}</Text>
-      <Chips items={items} variant={variant} />
+      <Chips items={items} />
     </View>
   );
 }
