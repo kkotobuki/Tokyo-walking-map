@@ -18,8 +18,23 @@ import { StatusBar } from "expo-status-bar";
 import { fetchAllStations, STATUS_VISITED, type StationSummary } from "./notion";
 import { categoryStyle } from "./ui";
 import StationsMap from "./StationsMap";
+import { normKey } from "./coords";
+import { STATION_ALIASES } from "../data/stationAliases";
+import { STATION_ALIASES_AUTO } from "../data/stationAliasesAuto";
 
 const CATEGORY_ORDER = ["食市場", "金融商業", "IT", "観光文化", "物流", "住宅", "下町", "官公庁"];
+
+// 検索結果の1件。エイリアス（未収録の近隣駅名）でヒットした場合はその駅名を持つ。
+type StationHit = StationSummary & { aliasHit?: string };
+
+// エイリアス表（手作業層＋自動生成層）を normKey で引けるように統合しておく。
+// Notion 側の駅名に表記ゆれが入っても失効しないための保険（coords.ts の NORM_COORDS と同じ流儀）。
+const NORM_ALIASES: Record<string, string[]> = {};
+for (const table of [STATION_ALIASES, STATION_ALIASES_AUTO]) {
+  for (const [primary, aliases] of Object.entries(table)) {
+    (NORM_ALIASES[normKey(primary)] ??= []).push(...aliases);
+  }
+}
 
 export default function HomeScreen({ onPick }: { onPick: (name: string) => void }) {
   const [stations, setStations] = useState<StationSummary[]>([]);
@@ -83,16 +98,25 @@ export default function HomeScreen({ onPick }: { onPick: (name: string) => void 
   }
 
   const filtered = useMemo(() => {
-    return stations.filter((s) => {
-      if (query && !s.name.includes(query)) return false;
-      for (const t of active) if (!stationHasTag(s, t)) return false;
-      return true;
-    });
+    const q = normKey(query);
+    const out: StationHit[] = [];
+    for (const s of stations) {
+      // 駅名で当たらなければエイリアス（未収録の近隣駅名）で当てる。
+      let aliasHit: string | undefined;
+      const key = normKey(s.name);
+      if (q && !key.includes(q)) {
+        aliasHit = (NORM_ALIASES[key] ?? []).find((a) => normKey(a).includes(q));
+        if (!aliasHit) continue;
+      }
+      if ([...active].some((t) => !stationHasTag(s, t))) continue;
+      out.push(aliasHit ? { ...s, aliasHit } : s);
+    }
+    return out;
   }, [stations, query, active]);
 
   // カテゴリごとにセクション分け（CATEGORY_ORDER 順、未分類は末尾）。
   const sections = useMemo(() => {
-    const groups: Record<string, StationSummary[]> = {};
+    const groups: Record<string, StationHit[]> = {};
     for (const s of filtered) {
       const k = s.category ?? "その他";
       (groups[k] ??= []).push(s);
@@ -271,7 +295,9 @@ export default function HomeScreen({ onPick }: { onPick: (name: string) => void 
             <Pressable style={styles.row} onPress={() => onPick(item.name)}>
               <View style={styles.rowMain}>
                 <Text style={styles.rowName}>{item.name}</Text>
-                <Text style={styles.rowMeta}>{item.ward}</Text>
+                <Text style={styles.rowMeta}>
+                  {item.aliasHit ? `${item.ward}・${item.aliasHit}はこの駅の圏内` : item.ward}
+                </Text>
               </View>
               {visited ? (
                 <Text style={styles.visited}>✓ 行ったことある</Text>
