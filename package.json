@@ -4,6 +4,7 @@
   "main": "index.ts",
   "scripts": {
     "start": "expo start",
+    "web": "bash scripts/dev-web.sh",
     "ios": "expo start --ios",
     "android": "expo start --android",
     "import": "tsx scripts/import-stations.ts",
