@@ -12,6 +12,7 @@
     "stats": "tsx scripts/stats.ts",
     "migrate:archetypes": "tsx scripts/migrate-archetypes.ts",
     "geocode": "tsx scripts/geocode-stations.ts",
+    "build:aliases": "tsx scripts/build-station-aliases.ts",
     "proxy": "tsx scripts/notion-proxy.ts",
     "strip:quiz": "tsx scripts/strip-quiz-tail.ts"
   },
