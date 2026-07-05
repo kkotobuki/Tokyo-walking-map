@@ -26,6 +26,8 @@ const STATIONS_DIR = path.join(__dirname, "..", "data", "stations");
 
 const TEXT_FIELDS = ["観察お題", "お題の解説", "供給の筋", "需要の筋", "ズレ", "未来の観点", "区"] as const;
 const MULTI_FIELDS = ["路線", "アンカー", "ショック", "需要", "類型", "ズレ類型"] as const;
+// 任意テキスト（空なら既存値を上書きしない）。DB に無ければ投入前に自動追加する
+const OPTIONAL_TEXT_FIELDS = ["おすすめルート", "観察ポイント", "定番スポット", "さくっとコース", "しっかりコース"] as const;
 
 function richText(s: string | undefined) {
   return { rich_text: s ? [{ type: "text" as const, text: { content: s } }] : [] };
@@ -42,11 +44,23 @@ function buildProperties(r: StationRecord) {
   for (const f of MULTI_FIELDS) props[f] = multiSelect((r as any)[f]);
   if (r.カテゴリ) props["カテゴリ"] = { select: { name: r.カテゴリ } };
   // 任意テキスト: 値がある時だけ設定（空で既存を上書きしない）
-  for (const f of ["おすすめルート", "観察ポイント", "定番スポット", "さくっとコース", "しっかりコース"] as const) {
+  for (const f of OPTIONAL_TEXT_FIELDS) {
     const v = (r as any)[f];
     if (typeof v === "string" && v.trim()) props[f] = richText(v);
   }
   return props;
+}
+
+/** 任意テキストのプロパティが DB スキーマに無ければ追加する（ページ更新 API は新規プロパティを作れないため） */
+async function ensureOptionalProps(notion: Client) {
+  const db = await notion.databases.retrieve({ database_id: DATABASE_ID });
+  const missing = OPTIONAL_TEXT_FIELDS.filter((f) => !(db as any).properties?.[f]);
+  if (!missing.length) return;
+  await notion.databases.update({
+    database_id: DATABASE_ID,
+    properties: Object.fromEntries(missing.map((f) => [f, { rich_text: {} }])) as any,
+  });
+  console.log(`+ DB プロパティを追加: ${missing.join(", ")}`);
 }
 
 /** data/vocab.ts に無いタグを洗い出す（投入は止めない・警告のみ） */
@@ -77,6 +91,7 @@ async function main() {
     process.exit(1);
   }
   const notion = new Client({ auth: token });
+  await ensureOptionalProps(notion);
 
   const only = process.argv.slice(2); // 駅名で絞り込み（任意）
   const files = fs.readdirSync(STATIONS_DIR).filter((f) => f.endsWith(".json"));
