@@ -32,9 +32,11 @@ function PlanCard({ station }: { station: Station }) {
     { label: "👀 観察ポイント", text: station.observePoints },
   ].filter((r) => !!r.text);
   if (!rows.length) return null;
+  // 「このまま出発してOK」はコース（順路＋所要時間）がある駅だけ。無い駅は控えめな見出しに落とす
+  const ready = !!(station.quickCourse || station.fullCourse);
   return (
     <View style={styles.plan}>
-      <Text style={styles.planTitle}>🎒 出発前プラン — このまま出発してOK</Text>
+      <Text style={styles.planTitle}>{ready ? "🎒 出発前プラン — このまま出発してOK" : "🎒 出発前メモ"}</Text>
       {rows.map((r) => (
         <View key={r.label}>
           <Text style={styles.planLabel}>{r.label}</Text>
