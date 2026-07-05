@@ -92,6 +92,10 @@ export interface StationRecord {
   未来の観点: string; // ⑤（答えなし）
   おすすめルート?: string; // 任意：歩く順路「駅→A→B」。空なら import は既存値を上書きしない
   観察ポイント?: string;   // 任意：歩くとき何を見るか
+  // --- 出発前プラン（ADR-0018。実用情報なので出発前に開示する） ---
+  定番スポット?: string;   // 任意：1行1スポット「名前 — 一言説明」×3〜5
+  さくっとコース?: string; // 任意：「約◯分｜駅◯◯口→A→B→…→駅」（30〜45分）
+  しっかりコース?: string; // 任意：同フォーマット（90〜120分）
   /** 既存語彙に無い概念を提案する場合（import で警告として集計） */
   proposedNewOptions?: { field: string; name: string; reason: string }[];
 }

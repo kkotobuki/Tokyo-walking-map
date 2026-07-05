@@ -60,6 +60,9 @@ export type Station = StationSummary & {
   future: string; // 未来の観点（⑤）
   observePoints: string; // 観察ポイント
   route: string; // おすすめルート
+  spots: string; // 定番スポット（ADR-0018・出発前に開示）
+  quickCourse: string; // さくっとコース（30〜45分）
+  fullCourse: string; // しっかりコース（90〜120分）
   hypothesis: string; // 自分の仮説（行きで記入）
   reflection: string; // 感想（帰りで記入）
 };
@@ -106,6 +109,9 @@ export async function fetchStation(name: string): Promise<Station> {
     future: readText(p["未来の観点"]),
     observePoints: readText(p["観察ポイント"]),
     route: readText(p["おすすめルート"]),
+    spots: readText(p["定番スポット"]),
+    quickCourse: readText(p["さくっとコース"]),
+    fullCourse: readText(p["しっかりコース"]),
     hypothesis: readText(p["仮説"]),
     reflection: readText(p["感想"]),
   };

@@ -42,7 +42,7 @@ function buildProperties(r: StationRecord) {
   for (const f of MULTI_FIELDS) props[f] = multiSelect((r as any)[f]);
   if (r.カテゴリ) props["カテゴリ"] = { select: { name: r.カテゴリ } };
   // 任意テキスト: 値がある時だけ設定（空で既存を上書きしない）
-  for (const f of ["おすすめルート", "観察ポイント"] as const) {
+  for (const f of ["おすすめルート", "観察ポイント", "定番スポット", "さくっとコース", "しっかりコース"] as const) {
     const v = (r as any)[f];
     if (typeof v === "string" && v.trim()) props[f] = richText(v);
   }
