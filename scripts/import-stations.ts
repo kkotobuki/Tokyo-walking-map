@@ -26,9 +26,17 @@ const STATIONS_DIR = path.join(__dirname, "..", "data", "stations");
 
 const TEXT_FIELDS = ["観察お題", "お題の解説", "供給の筋", "需要の筋", "ズレ", "未来の観点", "区"] as const;
 const MULTI_FIELDS = ["路線", "アンカー", "ショック", "需要", "類型", "ズレ類型"] as const;
+// 任意テキスト（空なら既存値を上書きしない）。DB に無ければ投入前に自動追加する
+const OPTIONAL_TEXT_FIELDS = ["おすすめルート", "観察ポイント", "定番スポット", "さくっとコース", "しっかりコース"] as const;
+
+// Notion の text.content は1要素あたり2000文字が上限（超えると validation_error で投入が止まる）
+const RICH_TEXT_LIMIT = 2000;
 
 function richText(s: string | undefined) {
-  return { rich_text: s ? [{ type: "text" as const, text: { content: s } }] : [] };
+  if (!s) return { rich_text: [] };
+  const chunks: string[] = [];
+  for (let i = 0; i < s.length; i += RICH_TEXT_LIMIT) chunks.push(s.slice(i, i + RICH_TEXT_LIMIT));
+  return { rich_text: chunks.map((content) => ({ type: "text" as const, text: { content } })) };
 }
 function multiSelect(arr: string[] | undefined) {
   return { multi_select: (arr ?? []).map((name) => ({ name })) };
@@ -42,11 +50,29 @@ function buildProperties(r: StationRecord) {
   for (const f of MULTI_FIELDS) props[f] = multiSelect((r as any)[f]);
   if (r.カテゴリ) props["カテゴリ"] = { select: { name: r.カテゴリ } };
   // 任意テキスト: 値がある時だけ設定（空で既存を上書きしない）
-  for (const f of ["おすすめルート", "観察ポイント"] as const) {
+  for (const f of OPTIONAL_TEXT_FIELDS) {
     const v = (r as any)[f];
     if (typeof v === "string" && v.trim()) props[f] = richText(v);
   }
   return props;
+}
+
+/** 任意テキストのプロパティが DB スキーマに無ければ追加する（ページ更新 API は新規プロパティを作れないため） */
+async function ensureOptionalProps(notion: Client) {
+  const db = await notion.databases.retrieve({ database_id: DATABASE_ID });
+  const props = (db as any).properties ?? {};
+  // 同名プロパティが rich_text 以外の型で既にあると pages.update が 400 で全体停止するため先に警告する
+  for (const f of OPTIONAL_TEXT_FIELDS) {
+    const t = props[f]?.type;
+    if (t && t !== "rich_text") console.warn(`⚠️ DB プロパティ "${f}" が ${t} 型で存在します（rich_text 想定）。手動で型を直してください`);
+  }
+  const missing = OPTIONAL_TEXT_FIELDS.filter((f) => !props[f]);
+  if (!missing.length) return;
+  await notion.databases.update({
+    database_id: DATABASE_ID,
+    properties: Object.fromEntries(missing.map((f) => [f, { rich_text: {} }])) as any,
+  });
+  console.log(`+ DB プロパティを追加: ${missing.join(", ")}`);
 }
 
 /** data/vocab.ts に無いタグを洗い出す（投入は止めない・警告のみ） */
@@ -76,7 +102,12 @@ async function main() {
     console.error("NOTION_TOKEN が未設定です。Notion インテグレーションのトークンを設定してください。");
     process.exit(1);
   }
+  if (!DATABASE_ID) {
+    console.error("NOTION_DB_ID が未設定です。対象DBの database id を設定してください。");
+    process.exit(1);
+  }
   const notion = new Client({ auth: token });
+  await ensureOptionalProps(notion);
 
   const only = process.argv.slice(2); // 駅名で絞り込み（任意）
   const files = fs.readdirSync(STATIONS_DIR).filter((f) => f.endsWith(".json"));

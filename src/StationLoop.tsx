@@ -21,6 +21,32 @@ import MapScreen from "./MapScreen";
 
 type Phase = "loading" | "error" | "outbound" | "onsite" | "return" | "done";
 
+// 出発前プラン（ADR-0018）。実用情報（どこを・どれくらい歩くか）は出発前から開示する。
+// 解釈（解説・ズレ等）は従来どおり帰りまで隠す。
+function PlanCard({ station }: { station: Station }) {
+  const rows: { label: string; text: string }[] = [
+    { label: "📍 定番スポット", text: station.spots },
+    { label: "🚶 さくっとコース（30〜45分）", text: station.quickCourse },
+    { label: "🥾 しっかりコース（90〜120分）", text: station.fullCourse },
+    { label: "🗺 おすすめルート", text: station.route },
+    { label: "👀 観察ポイント", text: station.observePoints },
+  ].filter((r) => !!r.text);
+  if (!rows.length) return null;
+  // 「このまま出発してOK」はコース（順路＋所要時間）がある駅だけ。無い駅は控えめな見出しに落とす
+  const ready = !!(station.quickCourse || station.fullCourse);
+  return (
+    <View style={styles.plan}>
+      <Text style={styles.planTitle}>{ready ? "🎒 出発前プラン — このまま出発してOK" : "🎒 出発前メモ"}</Text>
+      {rows.map((r) => (
+        <View key={r.label}>
+          <Text style={styles.planLabel}>{r.label}</Text>
+          <Text style={styles.planBody}>{r.text}</Text>
+        </View>
+      ))}
+    </View>
+  );
+}
+
 export default function StationLoop({
   stationName,
   onBack,
@@ -143,6 +169,7 @@ export default function StationLoop({
           <>
             <CategoryChip category={station.category} />
             <Chips items={station.demands} />
+            <PlanCard station={station} />
           </>
         )}
 
@@ -172,18 +199,6 @@ export default function StationLoop({
 
         {phase === "onsite" && (
           <View>
-            {!!station.observePoints && (
-              <>
-                <Text style={styles.label}>観察ポイント</Text>
-                <Text style={styles.body}>{station.observePoints}</Text>
-              </>
-            )}
-            {!!station.route && (
-              <>
-                <Text style={styles.label}>おすすめルート</Text>
-                <Text style={styles.body}>{station.route}</Text>
-              </>
-            )}
             <Pressable style={styles.btn} onPress={() => setPhase("return")}>
               <Text style={styles.btnText}>帰りの電車：答え合わせを見る</Text>
             </Pressable>
@@ -291,6 +306,18 @@ const styles = StyleSheet.create({
   btnText: { color: "#fff", fontSize: 16, fontWeight: "600" },
   linkBtn: { marginTop: 18, alignItems: "center" },
   linkText: { color: "#1f6feb", fontSize: 15, fontWeight: "600" },
+  plan: {
+    backgroundColor: "#f0f9ff",
+    borderWidth: 1,
+    borderColor: "#7dd3fc",
+    borderRadius: 12,
+    padding: 14,
+    marginTop: 12,
+    marginBottom: 4,
+  },
+  planTitle: { fontSize: 15, fontWeight: "800", color: "#075985", marginBottom: 2 },
+  planLabel: { fontSize: 13, fontWeight: "700", color: "#0369a1", marginTop: 10, marginBottom: 2 },
+  planBody: { fontSize: 15, lineHeight: 23, color: "#222" },
   callout: {
     backgroundColor: "#fff7ed",
     borderWidth: 1,
